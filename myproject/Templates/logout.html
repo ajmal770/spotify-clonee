@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spotify - Logged Out</title>
+    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" type="image/png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'logout.css' %}?v=2">
+</head>
+<body>
+
+<header class="header">
+    <a href="{% url 'login' %}" class="logo">
+        <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png" alt="Spotify" />
+    </a>
+</header>
+
+<main class="main-content">
+    <div class="logout-card">
+        <div class="icon-circle">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <h1>You’ve been logged out</h1>
+        <p class="subtitle">Your session has safely ended. Thank you for using Spotify.</p>
+        
+        <div class="btn-group">
+            <a href="{% url 'login' %}" class="btn relogin-btn">Log In Again</a>
+            <a href="{% url 'signup' %}" class="btn secondary-btn">Create Account</a>
+        </div>
+    </div>
+</main>
+
+<div class="ambient-bg"></div>
+
+</body>
+</html>

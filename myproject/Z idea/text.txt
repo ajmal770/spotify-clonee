@@ -1,0 +1,150 @@
+<h1>the authenticated validation adding the validation section {login and log ot adding the code bace the best option is the work }</h1>
+<link rel="stylesheet" href="{% static 'Spotify/list.css' %}" />
+<-------------------------------------->
+|slide 3 code and css code uder adding |
+<-------------------------------------->
+ <!-- next button -->
+      <button class="next-btn" disabled>Next</button>
+
+      <!-- footer -->
+      <div class="page-footer">
+        <p>
+          This site is protected by reCAPTCHA and the Google
+          <a href="#">Privacy Policy</a> and
+          <a href="#">Terms of Service</a> apply.
+        </p>
+      </div>
+<-------------->
+| CSS file uder|
+<-------------->     
+/* 
+.gender {
+  width: 65%;
+  margin: 30px auto;
+}
+.gender-title {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 6px;
+}
+.gender-note {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+.gender-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.gender-option input {
+  accent-color: #1ed760;
+}
+ */
+/* button */
+.next-btn {
+  width: 65%;
+  display: block;
+  margin: 32px auto 0;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background: #1ed760;
+  color: #000;
+  font-weight: bold;
+  font-size: 15px;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.next-btn:enabled {
+  opacity: 1;
+  cursor: pointer;
+}
+/* footer */
+.page-footer {
+  margin-top: 45px;
+  text-align: center;
+  font-size: 11px;
+  color: #a7a7a7;
+}
+.page-footer p {
+  max-width: 380px;
+  margin: auto;
+  line-height: 1.6;
+}
+.page-footer a {
+  color: #fff;
+  text-decoration: underline;
+}
+.page-footer a:hover {
+  color: #1ed760;
+}
+/* responsive */
+@media (max-width: 600px) {
+  .next-btn {
+    width: 90%;
+  }
+}
+
+
+all PAges linksunder 
+
+sing = http://127.0.0.1:8000/sing/
+
+s  2 = http://127.0.0.1:8000/sing2/
+
+s  3 = http://127.0.0.1:8000/sing3/
+
+s  4 = http://127.0.0.1:8000/sing4/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a href="next-page.html" class="next-btn">Next</a>
+
+
+.next-btn {
+  display: block;              
+  text-align: center;          
+  margin-top: 25px;
+  width: 80%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background: #1ed760;
+  color: #000;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  margin-left: 2rem;
+  text-decoration: none;      
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sing-4 page filling the content and sign up click time showing the login page and 
+sing  → sing2 → sing3 → sing4  (sing to sing4 all data save the database )  →  saved data used to login the user 

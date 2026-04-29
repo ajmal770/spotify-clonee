@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ artist_name }} - Spotify</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        :root { --bg-base: #121212; --bg-elevated: #181818; --spotify-green: #1DB954; }
+        body { background: var(--bg-base); color: #fff; font-family: 'Circular', Arial, sans-serif; margin: 0; padding-bottom: 100px; }
+        
+        .hero {
+            height: 40vh;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8)), #242424;
+            display: flex;
+            align-items: flex-end;
+            padding: 40px;
+            position: relative;
+        }
+        .hero-content { display: flex; align-items: center; gap: 24px; }
+        .hero-img { width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: cover; }
+        .hero-text h1 { font-size: 80px; margin: 0; font-weight: 900; letter-spacing: -2px; }
+        .verified { display: flex; align-items: center; gap: 8px; color: #4cb3ff; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+        .controls { padding: 30px 40px; display: flex; align-items: center; gap: 32px; }
+        .play-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--spotify-green); border: none; color: #000; font-size: 24px; cursor: pointer; transition: transform 0.2s; }
+        .play-btn:hover { transform: scale(1.05); }
+        .follow-btn { background: transparent; border: 1px solid #727272; color: #fff; padding: 8px 24px; border-radius: 20px; font-weight: 700; cursor: pointer; }
+        .follow-btn:hover { border-color: #fff; }
+
+        .song-list { padding: 0 40px; }
+        .song-row {
+            display: grid;
+            grid-template-columns: 32px 1fr 2fr 80px;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 4px;
+            color: #b3b3b3;
+            transition: background 0.2s;
+        }
+        .song-row:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .song-row .title { color: #fff; font-weight: 500; }
+        .back-link { position: absolute; top: 20px; left: 20px; color: #fff; text-decoration: none; font-weight: 700; background: rgba(0,0,0,0.5); padding: 8px 16px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <a href="{% url 'home' %}" class="back-link"><i class="fa-solid fa-chevron-left"></i> Home</a>
+        <div class="hero-content">
+            <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Artist" class="hero-img">
+            <div class="hero-text">
+                <div class="verified"><i class="fa-solid fa-circle-check"></i> Verified Artist</div>
+                <h1>{{ artist_name }}</h1>
+                <p>28,491,029 monthly listeners</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="play-btn"><i class="fa-solid fa-play"></i></button>
+        <button class="follow-btn">Following</button>
+    </div>
+
+    <div class="song-list">
+        <h2>Popular</h2>
+        <div class="song-row"><span>1</span><span class="title">Tum Hi Ho</span><span>Aashiqui 2</span><span>4:22</span></div>
+        <div class="song-row"><span>2</span><span class="title">Chaleya</span><span>Jawan</span><span>3:20</span></div>
+        <div class="song-row"><span>3</span><span class="title">Heeriye</span><span>Single</span><span>3:14</span></div>
+        <div class="song-row"><span>4</span><span class="title">Kesariya</span><span>Brahmastra</span><span>4:28</span></div>
+        <div class="song-row"><span>5</span><span class="title">O Maahi</span><span>Dunki</span><span>3:53</span></div>
+    </div>
+</body>
+</html>

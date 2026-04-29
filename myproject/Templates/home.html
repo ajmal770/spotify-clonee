@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify - Web Player</title>
+    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" type="image/png" />
+    {% load static %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'list.css' %}?v=42" />
+    <script src="{% static 'javaScriptsfile/list.js' %}?v=42" defer></script>
+    
+    <style>
+      /* CRITICAL: Ensure balance items are hidden on load */
+      .bio-section:not(.expanded) .bio-card:nth-child(n+4),
+      .live-section:not(.expanded) .live-song-item:nth-child(n+4) {
+        display: none !important;
+      }
+      .expanded .bio-card, .expanded .live-song-item {
+        display: flex !important;
+      }
+      .live-section.expanded .live-song-item {
+        display: grid !important;
+      }
+    </style>
+
+    <script>
+      // Bulletproof toggle function
+      function toggleSection(btn) {
+        const section = btn.closest('.home-section');
+        if (section) {
+          const isExpanded = section.classList.toggle('expanded');
+          btn.textContent = isExpanded ? 'Show less' : 'See all';
+          console.log('Toggled section:', section.className, 'Expanded:', isExpanded);
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- FULL SCREEN STORY VIEWER -->
+    <div id="story-viewer" class="story-modal">
+      <div class="story-progress-container">
+        <div class="story-progress-bar"><div class="story-progress-fill"></div></div>
+      </div>
+      <button class="story-close-btn">&times;</button>
+      <div class="story-content">
+        <img src="" id="story-img" alt="Story" />
+        <div class="story-overlay">
+          <div class="story-artist-info">
+            <img src="" id="story-artist-thumb" alt="Artist" />
+            <span id="story-artist-name">Artist Name</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP NOW PLAYING MODAL -->
+    <div id="now-playing-view">
+      <div class="np-modal-box">
+        <button class="np-close-btn" id="np-close-btn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+        <img src="" alt="Cover" class="np-cover" id="np-cover" />
+        <div class="np-title" id="np-title">Song Title</div>
+        <div class="np-artist" id="np-artist">Artist</div>
+      </div>
+    </div>
+
+    
+    <!-- ACCOUNT DETAILS MODAL -->
+    <div id="account-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:10005; align-items:center; justify-content:center;">
+      <div class="modal-box" style="background:#181818; border-radius:16px; width:450px; max-width:95vw; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,0.85); animation:slideUp 0.25s ease;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #282828; background:linear-gradient(135deg,#1f4233 0%,#181818 100%); display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="color:#fff; font-size:20px; margin:0;">Account Details</h2>
+          <button class="modal-close" id="account-close-btn" style="background:rgba(0,0,0,0.3); border:none; color:#fff; font-size:20px; cursor:pointer; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">&#x2715;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+          <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <div style="width:80px; height:80px; border-radius:50%; background:#1db954; color:#000; font-size:36px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 16px rgba(0,0,0,0.3);">
+              {{ user.name|slice:":1"|upper }}
+            </div>
+            <div>
+              <h3 style="color:#fff; font-size:24px; margin:0 0 4px 0;">{{ user.name }}</h3>
+              <span style="background:#1db954; color:#000; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:700;">Premium Member</span>
+            </div>
+          </div>
+          
+          <div style="background:#242424; border-radius:8px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #333; padding-bottom:12px;">
+              <span style="color:#b3b3b3; font-size:14px;">Email Account</span>
+              <strong style="color:#fff; font-size:14px;">{{ user.email }}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #333; padding-bottom:12px;">
+              <span style="color:#b3b3b3; font-size:14px;">Date of Birth</span>
+              <strong style="color:#fff; font-size:14px;">{{ user.dob }}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#b3b3b3; font-size:14px;">Gender</span>
+              <strong style="color:#fff; font-size:14px; text-transform:capitalize;">{{ user.gender }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYLIST MODAL -->
+    <div id="playlist-modal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div style="display:flex;align-items:center;">
+            <h2>&#10084; Liked Songs</h2>
+            <span class="count-badge" id="modal-count">0</span>
+          </div>
+          <button class="modal-close" id="modal-close-btn">&#x2715;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <p class="modal-empty" id="modal-empty">No songs liked yet. Click &#10084; on any song!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="top">
+      <nav class="navbar">
+
+        <!-- LEFT: Logo + Nav arrows -->
+        <div class="nav-left">
+          <div class="nav-logo">
+            <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png" alt="Spotify" />
+          </div>
+          <button class="nav-arrow-btn" title="Go back"><i class="fa-solid fa-chevron-left"></i></button>
+          <button class="nav-arrow-btn" title="Go forward"><i class="fa-solid fa-chevron-right"></i></button>
+          <a href="/home/" class="nav-home-btn" title="Home"><i class="fa-solid fa-house"></i></a>
+        </div>
+
+        <!-- CENTER: Search -->
+        <div class="nav-center">
+          <div class="nav-search">
+            <i class="fa-solid fa-magnifying-glass nav-search-icon"></i>
+            <input type="search" class="nav-search-input" placeholder="What do you want to play?" />
+            <span class="nav-search-divider"></span>
+            <i class="fa-solid fa-table-cells-large nav-browse-icon" title="Browse"></i>
+          </div>
+        </div>
+
+        <!-- RIGHT: User only -->
+        <div class="nav-right">
+          <a href="#" class="nav-pill-link">Premium</a>
+          <a href="#" class="nav-pill-link">Support</a>
+          <div class="nav-vdivider"></div>
+          
+          <div class="nav-user-pill" id="user-pill-btn" title="{{ user.name }}">
+            <figure class="nav-user-avatar">{{ user.name|slice:":1"|upper }}</figure>
+            <span class="nav-user-name">{{ user.name }}</span>
+            <i class="fa-solid fa-caret-down pill-caret" id="pill-caret-icon"></i>
+            
+            <div id="user-dropdown" class="user-dropdown-menu">
+              <a href="#" class="dropdown-link" id="account-btn">
+                <span>Account</span>
+                <i class="fa-solid fa-arrow-up-right-from-square" style="color:#b3b3b3; font-size:13px;"></i>
+              </a>
+              <a href="#" class="dropdown-link">
+                <span>Profile</span>
+              </a>
+              <a href="#" class="dropdown-link">
+                <span>Settings</span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="{% url 'logout' %}" class="dropdown-link">
+                <span>Log out</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Standalone Logout Button -->
+          <a href="{% url 'logout' %}" class="nav-logout-btn" title="Log out">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </a>
+        </div>
+
+      </nav>
+
+      <div class="section">
+        <!-- LEFT LIBRARY REDESIGNED -->
+        <div class="library">
+
+          <!-- SCROLLABLE AREA -->
+          <div class="lib-scroll-area">
+
+            <!-- Header -->
+            <div class="lib-header">
+              <div class="lib-header-left">
+                <i class="fa-solid fa-book-bookmark lib-icon"></i>
+                <span class="lib-title">Your Library</span>
+              </div>
+              <div class="lib-header-right">
+                <button class="lib-icon-btn" title="Add playlist"><i class="fa-solid fa-plus"></i></button>
+                <button class="lib-icon-btn" title="Expand"><i class="fa-solid fa-arrow-right"></i></button>
+              </div>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="lib-filters">
+              <button class="lib-pill active">Playlists</button>
+              <button class="lib-pill">Artists</button>
+              <button class="lib-pill">Albums</button>
+            </div>
+
+            <!-- Liked Songs Entry -->
+            <div class="lib-entry liked-entry" id="open-playlist-btn">
+              <div class="lib-entry-art liked-art">
+                <i class="fa-solid fa-heart"></i>
+              </div>
+              <div class="lib-entry-info">
+                <span class="lib-entry-name">Liked Songs</span>
+                <span class="lib-entry-meta">Playlist &bull; <span id="liked-count-badge" style="display:none;">0</span> songs</span>
+              </div>
+            </div>
+
+            <!-- Static playlist entries -->
+            <div class="lib-entry">
+              <div class="lib-entry-art" style="background:linear-gradient(135deg,#e8115b,#3d0b15);">
+                <i class="fa-solid fa-music"></i>
+              </div>
+              <div class="lib-entry-info">
+                <span class="lib-entry-name">Malayalam Hits</span>
+                <span class="lib-entry-meta">Playlist &bull; 15 songs</span>
+              </div>
+            </div>
+
+            <div class="lib-entry">
+              <div class="lib-entry-art" style="background:linear-gradient(135deg,#0d73ec,#0a2a6e);">
+                <i class="fa-solid fa-music"></i>
+              </div>
+              <div class="lib-entry-info">
+                <span class="lib-entry-name">Tamil Classics</span>
+                <span class="lib-entry-meta">Playlist &bull; 15 songs</span>
+              </div>
+            </div>
+
+            <div class="lib-entry">
+              <div class="lib-entry-art" style="background:linear-gradient(135deg,#7d40ff,#2d0b70);">
+                <i class="fa-solid fa-music"></i>
+              </div>
+              <div class="lib-entry-info">
+                <span class="lib-entry-name">English Hits</span>
+                <span class="lib-entry-meta">Playlist &bull; 15 songs</span>
+              </div>
+            </div>
+
+            <div class="lib-entry">
+              <div class="lib-entry-art" style="background:linear-gradient(135deg,#1ed760,#0a4d22);">
+                <i class="fa-solid fa-compact-disc"></i>
+              </div>
+              <div class="lib-entry-info">
+                <span class="lib-entry-name">Popular Albums</span>
+                <span class="lib-entry-meta">Albums &bull; 7 items</span>
+              </div>
+            </div>
+
+            <div class="lib-divider"></div>
+
+            <!-- Podcast Section -->
+            <div class="lib-section-label">
+              <i class="fa-solid fa-podcast" style="margin-right:6px;color:#1db954;"></i>Podcasts
+            </div>
+
+            <div class="lib-podcast-card">
+              <img class="lib-podcast-img" src="https://images.pexels.com/photos/3783471/pexels-photo-3783471.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Podcast 1" />
+              <div class="lib-podcast-info">
+                <span class="lib-podcast-name">The Daily</span>
+                <span class="lib-podcast-host">New York Times</span>
+              </div>
+            </div>
+
+            <div class="lib-podcast-card">
+              <img class="lib-podcast-img" src="https://images.pexels.com/photos/4348401/pexels-photo-4348401.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Podcast 2" />
+              <div class="lib-podcast-info">
+                <span class="lib-podcast-name">Crime Junkie</span>
+                <span class="lib-podcast-host">audiochuck</span>
+              </div>
+            </div>
+
+            <div class="lib-podcast-card">
+              <img class="lib-podcast-img" src="https://images.pexels.com/photos/7149165/pexels-photo-7149165.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Podcast 3" />
+              <div class="lib-podcast-info">
+                <span class="lib-podcast-name">Huberman Lab</span>
+                <span class="lib-podcast-host">Andrew Huberman</span>
+              </div>
+            </div>
+
+            <div class="lib-empty-box" style="margin-top:10px;">
+              <p class="lib-empty-text">&#127911; Discover more podcasts</p>
+              <button class="lib-browse-btn">
+                <i class="fa-solid fa-compass" style="margin-right:6px;"></i>Browse All
+              </button>
+            </div>
+
+          </div><!-- END .lib-scroll-area -->
+
+          <!-- FOOTER — always pinned at bottom -->
+          <footer class="lib-footer">
+            <div class="lib-footer-links">
+              <a href="#" class="lib-footer-link">Legal</a>
+              <a href="#" class="lib-footer-link">Safety &amp; Privacy</a>
+              <a href="#" class="lib-footer-link">Privacy Policy</a>
+              <a href="#" class="lib-footer-link">Cookies</a>
+              <a href="#" class="lib-footer-link">About Ads</a>
+              <a href="#" class="lib-footer-link">Accessibility</a>
+            </div>
+            <button class="lib-lang-btn">
+              <i class="fa-solid fa-globe"></i>
+              <span>English</span>
+              <i class="fa-solid fa-chevron-up" style="font-size:10px;margin-left:auto;"></i>
+            </button>
+            <p class="lib-footer-copy">&copy; 2024 Spotify Clone</p>
+          </footer>
+
+        </div><!-- END .library -->
+
+        <!-- RIGHT CONTENT -->
+        <div class="topic">
+          <!-- 1. Malayalam Songs -->
+          <div class="topics">
+            <h1 id="sub_hed">Malayalam Songs</h1>
+            <div class="list_box">
+
+              <!-- Aadyamaay Kandanaal – morning dawn vibes -->
+              <div class="audio-card" data-title="Aadyamaay Kandanaal" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1303081/pexels-photo-1303081.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Aadyamaay Kandanaal" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Aadyamaay Kandanaal</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Ente Priye – romantic couple / love -->
+              <div class="audio-card" data-title="Ente Priye" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/935789/pexels-photo-935789.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Ente Priye" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Ente Priye</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Mounasaro – moonlit silence / night -->
+              <div class="audio-card" data-title="Mounasaro" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1252869/pexels-photo-1252869.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Mounasaro" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Mounasaro</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Oru Pushpam – a flower / bloom -->
+              <div class="audio-card" data-title="Oru Pushpam" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/56866/garden-rose-red-pink-56866.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Oru Pushpam" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Oru Pushpam</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Vaathilpazhu – old wooden door / nostalgia -->
+              <div class="audio-card" data-title="Vaathilpazhu" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/164516/pexels-photo-164516.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Vaathilpazhu" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Vaathilpazhu</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Pulariyum Munpe – before dawn / sunrise fog -->
+              <div class="audio-card" data-title="Pulariyum Munpe" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1107717/pexels-photo-1107717.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Pulariyum Munpe" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Pulariyum Munpe</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Nilaave Vaa – come moonlight / blue night sky -->
+              <div class="audio-card" data-title="Nilaave Vaa" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/355465/pexels-photo-355465.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Nilaave Vaa" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Nilaave Vaa</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <!-- Kannil Minnum – eyes sparkling / bokeh lights -->
+              <div class="audio-card" data-title="Kannil Minnum" data-section="Malayalam">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/949586/pexels-photo-949586.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Kannil Minnum" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Kannil Minnum</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 2. Tamil Songs -->
+          <div class="topics">
+            <h1 id="sub_hed">Tamil Songs</h1>
+            <div class="list_box">
+              <!-- 1 -->
+              <div class="audio-card" data-title="Vennilave Vennilave" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/3571551/pexels-photo-3571551.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Vennilave" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Vennilave Vennilave</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 2 -->
+              <div class="audio-card" data-title="Kadhal Rojave" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Kadhal Rojave" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Kadhal Rojave</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 3 -->
+              <div class="audio-card" data-title="Enna Solla Pogirai" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/167092/pexels-photo-167092.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Enna Solla" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Enna Solla Pogirai</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 4 -->
+              <div class="audio-card" data-title="Munbe Vaa" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1423600/pexels-photo-1423600.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Munbe Vaa" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Munbe Vaa</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 5 -->
+              <div class="audio-card" data-title="Uyire Uyire" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1448457/pexels-photo-1448457.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Uyire" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Uyire Uyire</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 6 -->
+              <div class="audio-card" data-title="Nenjukkul Peidhidum" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1386604/pexels-photo-1386604.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Nenjukkul" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Nenjukkul Peidhidum</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 7 -->
+              <div class="audio-card" data-title="Oru Deivam Thantha" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/210243/pexels-photo-210243.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Oru Deivam" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Oru Deivam Thantha</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 8 -->
+              <div class="audio-card" data-title="Pogadhey" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/325521/pexels-photo-325521.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Pogadhey" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Pogadhey</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 9 -->
+              <div class="audio-card" data-title="Kannazhaga" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Kannazhaga" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Kannazhaga</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 10 -->
+              <div class="audio-card" data-title="Yennai Arindhaal" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1591447/pexels-photo-1591447.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Yennai" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Yennai Arindhaal</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 11 -->
+              <div class="audio-card" data-title="Saayndha Manidhargalay" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Saayndha" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Saayndha Manidhargalay</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 12 -->
+              <div class="audio-card" data-title="Idhazhin Oram" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Idhazhin" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Idhazhin Oram</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 13 -->
+              <div class="audio-card" data-title="Mazhai Kuruvi" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/459225/pexels-photo-459225.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Mazhai Kuruvi" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Mazhai Kuruvi</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 14 -->
+              <div class="audio-card" data-title="Rowdy Baby" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rowdy Baby" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Rowdy Baby</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 15 -->
+              <div class="audio-card" data-title="Kanave Kanave" data-section="Tamil">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Kanave" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Kanave Kanave</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. English Songs -->
+          <div class="topics">
+            <h1 id="sub_hed">English Songs</h1>
+            <div class="list_box">
+              <!-- 1: Shape of You - beach/summer -->
+              <div class="audio-card" data-title="Shape of You" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/144429/pexels-photo-144429.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Shape of You" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Shape of You</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 2: Blinding Lights - neon city night -->
+              <div class="audio-card" data-title="Blinding Lights" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Blinding Lights" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Blinding Lights</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 3: Stay With Me - cozy indoor -->
+              <div class="audio-card" data-title="Stay With Me" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Stay With Me" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Stay With Me</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 4: Someone Like You - rainy window -->
+              <div class="audio-card" data-title="Someone Like You" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/110874/pexels-photo-110874.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Someone Like You" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Someone Like You</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 5: Rolling in the Deep - fire/dramatic -->
+              <div class="audio-card" data-title="Rolling in the Deep" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/266614/pexels-photo-266614.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rolling in the Deep" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Rolling in the Deep</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 6: Perfect - couple/romantic -->
+              <div class="audio-card" data-title="Perfect" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Perfect" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Perfect</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 7: Levitating - space/galaxy -->
+              <div class="audio-card" data-title="Levitating" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Levitating" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Levitating</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 8: Bad Guy - bold urban -->
+              <div class="audio-card" data-title="Bad Guy" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Bad Guy" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Bad Guy</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 9: Watermelon Sugar - summer fruit -->
+              <div class="audio-card" data-title="Watermelon Sugar" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1638660/pexels-photo-1638660.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Watermelon Sugar" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Watermelon Sugar</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 10: Dynamite - fireworks/party -->
+              <div class="audio-card" data-title="Dynamite" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1729931/pexels-photo-1729931.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Dynamite" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Dynamite</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 11: Bohemian Rhapsody - stage/spotlight -->
+              <div class="audio-card" data-title="Bohemian Rhapsody" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1540406/pexels-photo-1540406.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Bohemian Rhapsody" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Bohemian Rhapsody</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 12: Hotel California - warm retro -->
+              <div class="audio-card" data-title="Hotel California" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Hotel California" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Hotel California</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 13: Smells Like Teen Spirit - rock concert -->
+              <div class="audio-card" data-title="Smells Like Teen Spirit" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Teen Spirit" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Smells Like Teen Spirit</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 14: Let Her Go - autumn road -->
+              <div class="audio-card" data-title="Let Her Go" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/紀念231291/pexels-photo-231291.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Let Her Go" onerror="this.src='https://images.pexels.com/photos/531321/pexels-photo-531321.jpeg?auto=compress&cs=tinysrgb&w=600'" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Let Her Go</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+              <!-- 15: Counting Stars - starry night -->
+              <div class="audio-card" data-title="Counting Stars" data-section="English">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1252869/pexels-photo-1252869.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Counting Stars" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Counting Stars</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Song</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Vaathilpazhu.mp3" type="audio/mpeg" /></audio>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Popular artists -->
+          <div class="topics">
+            <h1 id="sub_hed">Popular artists</h1>
+            <div class="list_box">
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Arijit Singh' %}"><img class="poster_img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6tX9hCKwow6X4T6P5TIK5PP4aaMx_tCcU9A&s" alt="Arijit Singh" /></a>
+                <p class="artist_name">Arijit Singh</p><a href="{% url 'artist_detail' 'Arijit Singh' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'A.R. Rahman' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/AR_Rahman_At_The_%E2%80%98Marvel_Anthem%E2%80%99_Launch_%283x4_cropped%29.jpg/250px-AR_Rahman_At_The_%E2%80%98Marvel_Anthem%E2%80%99_Launch_%283x4_cropped%29.jpg" alt="A.R. Rahman" /></a>
+                <p class="artist_name">A.R. Rahman</p><a href="{% url 'artist_detail' 'A.R. Rahman' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Shreya Ghoshal' %}"><img class="poster_img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL9u_XwWLM6swwGOsgFQOoOVJqq62Ck4Qh-w&s" alt="Shreya Ghoshal" /></a>
+                <p class="artist_name">Shreya Ghoshal</p><a href="{% url 'artist_detail' 'Shreya Ghoshal' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Sonu Nigam' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/7/76/Sonu_Nigam123.jpg" alt="Sonu Nigam" /></a>
+                <p class="artist_name">Sonu Nigam</p><a href="{% url 'artist_detail' 'Sonu Nigam' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Kishore Kumar' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/c/c2/Kishore_Kumar_2016_postcard_of_India_%28cropped%29.jpg" alt="Kishore Kumar" /></a>
+                <p class="artist_name">Kishore Kumar</p><a href="{% url 'artist_detail' 'Kishore Kumar' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Lata Mangeshkar' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Lata-Mangeshkar.jpg" alt="Lata Mangeshkar" /></a>
+                <p class="artist_name">Lata Mangeshkar</p><a href="{% url 'artist_detail' 'Lata Mangeshkar' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'Sunidhi Chauhan' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Sunidhi_Chauhan_performing_in_Delhi.jpg" alt="Sunidhi Chauhan" /></a>
+                <p class="artist_name">Sunidhi Chauhan</p><a href="{% url 'artist_detail' 'Sunidhi Chauhan' %}" class="artist_link">Artist</a>
+              </div>
+              <div class="poster_card">
+                <a href="{% url 'artist_detail' 'KK' %}"><img class="poster_img" src="https://upload.wikimedia.org/wikipedia/commons/0/09/KK_%28125%29.jpg" alt="KK" /></a>
+                <p class="artist_name">KK</p><a href="{% url 'artist_detail' 'KK' %}" class="artist_link">Artist</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4.1 Global Top Artists -->
+          <div class="topics">
+            <h1 id="sub_hed">Global Top Artists</h1>
+            <div class="list_box">
+              <div class="poster_card">
+                <img class="poster_img" src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=200" alt="The Weeknd" />
+                <p class="artist_name">The Weeknd</p>
+                <span class="artist_link">Artist</span>
+              </div>
+              <div class="poster_card">
+                <img class="poster_img" src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Taylor Swift" />
+                <p class="artist_name">Taylor Swift</p>
+                <span class="artist_link">Artist</span>
+              </div>
+              <div class="poster_card">
+                <img class="poster_img" src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Drake" />
+                <p class="artist_name">Drake</p>
+                <span class="artist_link">Artist</span>
+              </div>
+              <div class="poster_card">
+                <img class="poster_img" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Ed Sheeran" />
+                <p class="artist_name">Ed Sheeran</p>
+                <span class="artist_link">Artist</span>
+              </div>
+              <div class="poster_card">
+                <img class="poster_img" src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Justin Bieber" />
+                <p class="artist_name">Justin Bieber</p>
+                <span class="artist_link">Artist</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Popular albums -->
+          <div class="topics">
+            <h1 id="sub_hed">Popular albums</h1>
+            <div class="list_box">
+              <div class="audio-card" data-title="Aashiqui 2" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Aashiqui 2" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Aashiqui 2</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/01-Aadyamaay%20kandanaal.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Rockstar" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/164969/pexels-photo-164969.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rockstar" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Rockstar</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/02-Ente%20Priye.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Kabir Singh" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/1701201/pexels-photo-1701201.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Kabir Singh" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Kabir Singh</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/03-Mounasaro.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Brahmastra" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/355152/pexels-photo-355152.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Brahmastra" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Brahmastra</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/04-Oru%20Pushpam.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Animal" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/34091/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=600" alt="Animal" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Animal</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/05-Raathinkal.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Dil Se" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/386009/pexels-photo-386009.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Dil Se" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Dil Se</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/06-SreeLathikakal.mp3" type="audio/mpeg" /></audio>
+              </div>
+
+              <div class="audio-card" data-title="Lagaan" data-section="Albums">
+                <div class="card-img-wrap">
+                  <img class="cover" src="https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Lagaan" />
+                  <button class="card-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <p class="song-title">Lagaan</p>
+                <div class="card-bottom">
+                  <span class="card-type-label">Album</span>
+                  <button class="side-btn">&#10084;</button>
+                </div>
+                <audio class="hidden-audio" preload="none"><source src="https://archive.org/download/90s-evergreen-malayalam-film-songs/07-Sreenilavaay.mp3" type="audio/mpeg" /></audio>
+              </div>
+            </div>
+          </div>
+
+          <!-- 0. Artist Stories – Premium Top Bar -->
+          <div class="home-section story-section">
+            <div class="section-header">
+              <h2 class="section-title">Artist Stories</h2>
+              <span class="section-see-all">Watch All</span>
+            </div>
+            <div class="story-row">
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=200" alt="AR Rahman" />
+                  <div class="story-badge"><i class="fa-solid fa-plus"></i></div>
+                </div>
+                <p class="story-artist">A.R. Rahman</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Arijit Singh" />
+                </div>
+                <p class="story-artist">Arijit Singh</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Shreya Ghoshal" />
+                </div>
+                <p class="story-artist">Shreya Ghoshal</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=200" alt="SPB" />
+                </div>
+                <p class="story-artist">S.P.B.</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Kishore Kumar" />
+                </div>
+                <p class="story-artist">Kishore Kumar</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/210243/pexels-photo-210243.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Lata Mangeshkar" />
+                </div>
+                <p class="story-artist">Lata Mangeshkar</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Sonu Nigam" />
+                </div>
+                <p class="story-artist">Sonu Nigam</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Sunidhi Chauhan" />
+                </div>
+                <p class="story-artist">Sunidhi Chauhan</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap">
+                  <img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=200" alt="KK" />
+                </div>
+                <p class="story-artist">KK</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Badshah</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Neha Kakkar</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Jubin Nautiyal</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Armaan Malik</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Atif Aslam</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Diljit Dosanjh</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Sidhu Moose Wala</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Guru Randhawa</p>
+              </div>
+              <div class="story-card">
+                <div class="story-img-wrap"><img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Artist" /></div>
+                <p class="story-artist">Jonita Gandhi</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. BIOGRAPHY – Artist Profiles -->
+          <div class="home-section bio-section">
+            <div class="section-header">
+              <h2 class="section-title">📖 About the Artists</h2>
+              <span class="section-see-all" onclick="toggleSection(this)">See all</span>
+            </div>
+            <div class="bio-grid">
+              <div class="bio-card">
+                <div class="bio-card-img">
+                  <img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=400" alt="AR Rahman" />
+                </div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Composer</span>
+                  <h3 class="bio-name">A.R. Rahman</h3>
+                  <p class="bio-text">Academy Award-winning composer, known as the "Mozart of Madras".</p>
+                  <div class="bio-stats">
+                    <div class="bio-stat"><i class="fa-solid fa-music"></i><span>3,000+ Songs</span></div>
+                    <div class="bio-stat"><i class="fa-solid fa-award"></i><span>2 Oscars</span></div>
+                  </div>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img">
+                  <img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Arijit Singh" />
+                </div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Vocalist</span>
+                  <h3 class="bio-name">Arijit Singh</h3>
+                  <p class="bio-text">India's most beloved playback singer with a soulful voice.</p>
+                  <div class="bio-stats">
+                    <div class="bio-stat"><i class="fa-solid fa-music"></i><span>600+ Songs</span></div>
+                    <div class="bio-stat"><i class="fa-solid fa-award"></i><span>National Award</span></div>
+                  </div>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img">
+                  <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Shreya Ghoshal" />
+                </div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Melody Queen</span>
+                  <h3 class="bio-name">Shreya Ghoshal</h3>
+                  <p class="bio-text">Celebrated for her versatility and emotional depth across 20+ languages.</p>
+                  <div class="bio-stats">
+                    <div class="bio-stat"><i class="fa-solid fa-music"></i><span>4,000+ Songs</span></div>
+                    <div class="bio-stat"><i class="fa-solid fa-award"></i><span>4 National Awards</span></div>
+                  </div>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <!-- Added More Bios -->
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Kishore Kumar" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Legend</span>
+                  <h3 class="bio-name">Kishore Kumar</h3>
+                  <p class="bio-text">The multi-talented genius who defined Bollywood's golden era.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Sunidhi" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Powerhouse</span>
+                  <h3 class="bio-name">Sunidhi Chauhan</h3>
+                  <p class="bio-text">Known for her high-octane performances and incredible range.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Atif" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Soulful</span>
+                  <h3 class="bio-name">Atif Aslam</h3>
+                  <p class="bio-text">The voice that brought a new wave of romantic melodies.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Badshah" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Rapper</span>
+                  <h3 class="bio-name">Badshah</h3>
+                  <p class="bio-text">Redefining modern Indian pop and hip-hop culture.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Artist" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Artist</span>
+                  <h3 class="bio-name">Jubin Nautiyal</h3>
+                  <p class="bio-text">The master of modern cinematic romantic tracks.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Artist" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Artist</span>
+                  <h3 class="bio-name">Armaan Malik</h3>
+                  <p class="bio-text">A young global icon bridging Indian and Western pop.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <!-- Unique Bios -->
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Sonu Nigam" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Legend</span>
+                  <h3 class="bio-name">Sonu Nigam</h3>
+                  <p class="bio-text">Master of romantic ballads and a voice that defined the 2000s.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Sunidhi" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Powerhouse</span>
+                  <h3 class="bio-name">Sunidhi Chauhan</h3>
+                  <p class="bio-text">Known for her electric stage presence and unmatched vocal range.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Sidhu" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Icon</span>
+                  <h3 class="bio-name">Sidhu Moose Wala</h3>
+                  <p class="bio-text">A global trendsetter who revolutionized Punjabi music.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Badshah" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Trendsetter</span>
+                  <h3 class="bio-name">Badshah</h3>
+                  <p class="bio-text">The king of Indian hip-hop and chart-topping club anthems.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=400" alt="KK" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Soulful</span>
+                  <h3 class="bio-name">KK</h3>
+                  <p class="bio-text">The voice of youth and timeless friendship anthems.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Guru" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Pop Star</span>
+                  <h3 class="bio-name">Guru Randhawa</h3>
+                  <p class="bio-text">India's high-rated pop star with a global fanbase.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Jonita" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Versatile</span>
+                  <h3 class="bio-name">Jonita Gandhi</h3>
+                  <p class="bio-text">A modern playback sensation with hits in multiple languages.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+              <div class="bio-card">
+                <div class="bio-card-img"><img src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Kishore" /></div>
+                <div class="bio-card-body">
+                  <span class="bio-badge">Immortal</span>
+                  <h3 class="bio-name">Kishore Kumar</h3>
+                  <p class="bio-text">The legendary genius who remains the soul of Bollywood.</p>
+                  <a href="#" class="bio-follow-btn">Follow</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. LIVE SONGS – Top Trending -->
+          <div class="home-section live-section">
+            <div class="section-header">
+              <h2 class="section-title"><span class="live-dot"></span> Live &amp; Trending</h2>
+              <span class="section-see-all" onclick="toggleSection(this)">See all</span>
+            </div>
+            <div class="live-song-list">
+              <div class="live-song-item">
+                <span class="live-rank">01</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Tere Bina" />
+                <div class="live-info">
+                  <p class="live-title">Tere Bina</p>
+                  <p class="live-artist">A.R. Rahman &middot; Guru</p>
+                </div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:88%"></div></div>
+                <span class="live-duration">5:11</span>
+                <div class="live-badge trending">🔥 Trending</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">02</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Tum Hi Ho" />
+                <div class="live-info">
+                  <p class="live-title">Tum Hi Ho</p>
+                  <p class="live-artist">Arijit Singh &middot; Aashiqui 2</p>
+                </div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:95%"></div></div>
+                <span class="live-duration">4:22</span>
+                <div class="live-badge hot">❤️ Hot</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">03</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Lag Jaa Gale" />
+                <div class="live-info">
+                  <p class="live-title">Lag Jaa Gale</p>
+                  <p class="live-artist">Shreya Ghoshal &middot; Classic</p>
+                </div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:75%"></div></div>
+                <span class="live-duration">4:08</span>
+                <div class="live-badge classic">🏆 Classic</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">04</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Pee Loon" />
+                <div class="live-info">
+                  <p class="live-title">Pee Loon</p>
+                  <p class="live-artist">Mohit Chauhan &middot; Once Upon A Time</p>
+                </div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:82%"></div></div>
+                <span class="live-duration">4:47</span>
+                <div class="live-badge trending">✨ New</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">05</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Kesariya</p><p class="live-artist">Arijit Singh &middot; Brahmastra</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:90%"></div></div>
+                <span class="live-duration">4:28</span>
+                <div class="live-badge hot">❤️ Hot</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">06</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Raataan Lambiyan</p><p class="live-artist">Jubin Nautiyal &middot; Shershaah</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:85%"></div></div>
+                <span class="live-duration">3:50</span>
+                <div class="live-badge trending">🔥 Trending</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">07</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Guli Mata</p><p class="live-artist">Saad Lamjarred &middot; Shreya Ghoshal</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:78%"></div></div>
+                <span class="live-duration">4:15</span>
+                <div class="live-badge new">✨ New</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">08</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Chaleya</p><p class="live-artist">Anirudh &middot; Jawan</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:92%"></div></div>
+                <span class="live-duration">3:20</span>
+                <div class="live-badge trending">🔥 Trending</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">09</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Heeriye</p><p class="live-artist">Arijit Singh &middot; Jasleen Royal</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:88%"></div></div>
+                <span class="live-duration">3:14</span>
+                <div class="live-badge hot">❤️ Hot</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">10</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Maan Meri Jaan</p><p class="live-artist">King &middot; Champagne Talk</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:84%"></div></div>
+                <span class="live-duration">3:14</span>
+                <div class="live-badge trending">🔥 Trending</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">11</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1955134/pexels-photo-1955134.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">Proper Patola</p><p class="live-artist">Diljit Dosanjh &middot; Badshah</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:80%"></div></div>
+                <span class="live-duration">3:45</span>
+                <div class="live-badge classic">🏆 Classic</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">12</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">O Maahi</p><p class="live-artist">Arijit Singh &middot; Dunki</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:86%"></div></div>
+                <span class="live-duration">3:53</span>
+                <div class="live-badge hot">❤️ Hot</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">13</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/462028/pexels-photo-462028.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">295</p><p class="live-artist">Sidhu Moose Wala &middot; Moosetape</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:94%"></div></div>
+                <span class="live-duration">4:30</span>
+                <div class="live-badge hot">🔥 Trending</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">14</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">High Rated Gabru</p><p class="live-artist">Guru Randhawa &middot; Hits</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:82%"></div></div>
+                <span class="live-duration">3:34</span>
+                <div class="live-badge new">✨ New</div>
+              </div>
+              <div class="live-song-item">
+                <span class="live-rank">15</span>
+                <img class="live-thumb" src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=80" alt="Artist" />
+                <div class="live-info"><p class="live-title">What Jhumka?</p><p class="live-artist">Arijit Singh &middot; Jonita Gandhi</p></div>
+                <div class="live-chart-bar"><div class="live-bar-fill" style="width:89%"></div></div>
+                <span class="live-duration">3:33</span>
+                <div class="live-badge trending">🔥 Trending</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <footer class="home-footer">
+            <div class="footer-top">
+              <div class="footer-brand">
+                <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png" alt="Spotify" class="footer-logo" />
+              </div>
+              <div class="footer-cols">
+                <div class="footer-col">
+                  <h4>Company</h4>
+                  <a href="#">About</a>
+                  <a href="#">Jobs</a>
+                  <a href="#">For the Record</a>
+                </div>
+                <div class="footer-col">
+                  <h4>Communities</h4>
+                  <a href="#">For Artists</a>
+                  <a href="#">Developers</a>
+                  <a href="#">Advertising</a>
+                  <a href="#">Investors</a>
+                  <a href="#">Vendors</a>
+                </div>
+                <div class="footer-col">
+                  <h4>Useful Links</h4>
+                  <a href="#">Support</a>
+                  <a href="#">Free Mobile App</a>
+                </div>
+              </div>
+              <div class="footer-socials">
+                <a href="#" class="footer-social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" class="footer-social-btn" title="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+                <a href="#" class="footer-social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+              </div>
+            </div>
+            <div class="footer-bottom">
+              <p class="footer-copy">&copy; 2025 Spotify AB</p>
+              <div class="footer-legal">
+                <a href="#">Legal</a>
+                <a href="#">Safety &amp; Privacy Center</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Cookies</a>
+                <a href="#">About Ads</a>
+                <a href="#">Accessibility</a>
+              </div>
+            </div>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION 1: STORY – Artist Spotlight        -->
+    <!-- ========================================== -->
+
+    <!-- ========================================== -->
+    <!-- FOOTER                                     -->
+    <!-- ========================================== -->
+
+
+    <!-- ========================================== -->
+    <div class="playbar" id="global-playbar">
+      <!-- Left info -->
+      <div class="pb-left">
+        <img id="pb-img" class="pb-img" src="" alt="" />
+        <div class="pb-info">
+          <div style="display:flex; align-items:center;">
+             <div id="pb-title" class="pb-title" style="margin-bottom:0;">Nothing playing</div>
+             <div class="music-bars" id="music-bars-anim" style="display:none;">
+               <div class="music-bar"></div><div class="music-bar"></div><div class="music-bar"></div>
+             </div>
+          </div>
+          <div id="pb-artist" class="pb-artist"></div>
+        </div>
+      </div>
+
+      <!-- Center Controls -->
+      <div class="pb-center">
+        <div class="pb-controls">
+          <button id="pb-shuffle-btn" class="pb-btn" title="Enable shuffle"><i class="fa-solid fa-shuffle"></i></button>
+          <button id="pb-prev-btn" class="pb-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+          <button id="pb-play-btn" class="pb-btn pb-play-circle"><i class="fa-solid fa-play"></i></button>
+          <button id="pb-next-btn" class="pb-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+          <button id="pb-repeat-btn" class="pb-btn" title="Enable repeat"><i class="fa-solid fa-repeat"></i></button>
+        </div>
+        
+        <div class="pb-playback-bar">
+          <span id="pb-time-current" class="pb-time">0:00</span>
+          <!-- Scrubbing input slider -->
+          <input type="range" id="pb-progress" class="pb-progress" min="0" max="100" value="0" step="0.1" />
+          <span id="pb-time-total" class="pb-time">0:00</span>
+        </div>
+      </div>
+
+      <!-- Right section -->
+      <div class="pb-right">
+        <!-- space for volume controls etc in future -->
+      </div>
+    </div>
+  </body>
+</html>

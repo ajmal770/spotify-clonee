@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title> Spotify </title>
+  <link
+      rel="icon"
+      href="https://static.vecteezy.com/system/resources/previews/023/986/728/non_2x/spotify-logo-spotify-logo-transparent-spotify-icon-transparent-free-free-png.png"
+      type="image/png"
+    />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'sing3.css' %}" />
+  <!-- <script src="{% static 'javaScriptsfile/sing3.js' %}" defer></script> -->
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body>
+  <div class="signup-container">
+
+    <!-- Logo -->
+    <img
+      class="app-logo"
+      src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png"
+      alt="Spotify"
+    />
+
+    <!-- Progress -->
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header-section">
+      <i class="fa-solid fa-angle-left back-icon"></i>
+      <div>
+        <small class="step-text">Step 3 of 3</small>
+        <h3 class="title-text">Tell us about yourself</h3>
+      </div>
+    </div>
+
+    <!-- FORM START -->
+    <form method="post" class="form-wrapper" novalidate>
+      {% csrf_token %}
+
+      <!-- Name -->
+      <label class="label">Name</label>
+      <p class="sub-text">This name will appear on your profile</p>
+      <input
+        type="text"
+        name="name"
+        class="text-input"
+        placeholder="Enter your name"
+        required
+        minlength="3"
+      />
+
+      <!-- DOB -->
+      <label class="label">Date of birth</label>
+      <p class="sub-text">Use your real date of birth (YYYY / Month / DD)</p>
+
+      <div class="dob-group">
+        <input
+          type="text"
+          name="year"
+          placeholder="yyyy"
+          maxlength="4"
+          required
+        />
+
+        <select name="month" required>
+          <option value="">Month</option>
+          <option>January</option>
+          <option>February</option>
+          <option>March</option>
+          <option>April</option>
+          <option>May</option>
+          <option>June</option>
+          <option>July</option>
+          <option>August</option>
+          <option>September</option>
+          <option>October</option>
+          <option>November</option>
+          <option>December</option>
+        </select>
+
+        <input
+          type="text"
+          name="day"
+          placeholder="dd"
+          maxlength="2"
+          required
+        />
+      </div>
+
+      <!-- Gender -->
+      <label class="label">Gender</label>
+      <p class="sub-text">
+        We use your gender to help personalize our content recommendations and ads.
+      </p>
+
+      <div class="gender-grid">
+        <label><input type="radio" name="gender" value="man" required /> Man</label>
+        <label><input type="radio" name="gender" value="woman" /> Woman</label>
+        <label><input type="radio" name="gender" value="non-binary" /> Non-binary</label>
+        <label><input type="radio" name="gender" value="other" /> Something else</label>
+        <label><input type="radio" name="gender" value="none" /> Prefer not to say</label>
+      </div>
+
+      <!-- SUBMIT -->
+      <button type="submit" class="next-btn">Next</button>
+
+      <!-- Footer -->
+      <div class="page-footer">
+        <p>
+          This site is protected by reCAPTCHA and the Google
+          <a href="#">Privacy Policy</a> and
+          <a href="#">Terms of Service</a> apply.
+        </p>
+      </div>
+
+    </form>
+    <!-- FORM END -->
+
+  </div>
+</body>
+</html>

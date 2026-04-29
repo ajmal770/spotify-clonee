@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify</title>
+    <link
+      rel="icon"
+      href="https://static.vecteezy.com/system/resources/previews/023/986/728/non_2x/spotify-logo-spotify-logo-transparent-spotify-icon-transparent-free-free-png.png"
+      type="image/png"
+    />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'sing.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="logo-up">
+      <img
+        class="up-logo"
+        src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png"
+        alt="Spotify"
+      />
+      <h1 class="sub-hed">
+        Sign up to <br />
+        start listening
+      </h1>
+      <div class="in-put">
+        <form method="POST">
+          {% csrf_token %}
+          <label id="label" for="email">Email address</label> <br />
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="example@gmail.com"
+            required
+          />
+          <br /><br />
+          <a id="use-ph" href="#">Use phone number instead</a><br />
+
+          <button id="btn" type="submit">Next</button>
+        </form>
+        <strong>or</strong><br /><br />
+        <div class="but">
+          <button id="g-but">
+            <i class="fa-brands fa-google"></i>
+            Sign up with Google
+          </button>
+          <br />
+          <button id="apple-button">
+            <i class="fa-brands fa-apple"></i>
+            Sign up with Apple
+          </button>
+          <br />
+          <br />
+          <div class="have-acc">
+            <p id="account">Already have an account?</p>
+            <a href="http://127.0.0.1:8000/login/" id="l-login">Log in</a>
+            <div class="footer">
+              <p>
+                This site is protected by <br />
+                reCAPTCHA and the Google <a href="#">Privacy Policy</a>
+                <br />and <a href="#">Terms of Service</a> apply.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

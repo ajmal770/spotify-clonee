@@ -1,0 +1,168 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+/* Body */
+body {
+  height: 100vh;
+  background-color: #000;
+  color: #fff;
+}
+
+/* Wrapper */
+.wrapper {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6%;
+}
+
+/* Login box */
+.login-box {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+/* Logo */
+.logo {
+  width: 42px;
+  margin-top: 50px;
+}
+
+/* Heading */
+h1 {
+  font-size: 48px;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+/* Label */
+label {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  margin-left: 1.5rem;
+}
+
+/* Input */
+input {
+  width: 88%;
+  height: 48px;
+  background: transparent;
+  border: 1px solid #727272;
+  border-radius: 4px;
+  padding: 0 12px;
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #1db954;
+}
+
+/* Buttons */
+.btn {
+  width: 88%;
+  height: 48px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  margin-left: 1.5rem;
+}
+
+/* Primary */
+.primary {
+  background: #1ed760;
+  border: none;
+  color: #000;
+}
+
+.primary:hover {
+  transform: scale(1.02);
+}
+
+/* Outline */
+.outline {
+  background: transparent;
+  border: 1px solid #727272;
+  color: #fff;
+}
+
+.outline:hover {
+  border-color: #fff;
+}
+
+/* OR */
+.or {
+  margin: 20px 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Signup */
+.signup {
+  margin-top: 32px;
+  font-size: 14px;
+}
+
+.signup a {
+  color: #1ed760;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.signup a:hover {
+  text-decoration: underline;
+}
+
+/* Footer (Spotify style) */
+.footer {
+  margin-top: 48px;
+  padding-bottom: 20px;
+  text-align: center;
+}
+
+.footer p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #a7a7a7;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.footer a {
+  color: #ffffff;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.footer a:hover {
+  color: #1ed760;
+}
+
+/* Icons */
+i {
+  font-size: 18px;
+}
+
+
+#errors {
+  color: red;
+  margin-top: 10px;
+}

@@ -1,0 +1,174 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+/* main wrapper */
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 70px 20px 40px;
+}
+
+/* spotify logo */
+.s2-logo {
+  display: block;
+  margin: 0 auto 30px;
+  width: 42px;
+}
+
+/* progress bar */
+#track {
+  width: 100%;
+  height: 4px;
+  background-color: #444;
+  margin-bottom: 30px;
+}
+
+#line {
+  width: 33%;
+  height: 100%;
+  background-color: #1ed760;
+}
+
+/* header section */
+.top-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.top-content i {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.top-content small {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.top-content h3 {
+  font-size: 22px;
+  margin-top: 4px;
+}
+
+/* content wrapper */
+.container-count {
+  width: 100%;
+  margin-left: 2rem;
+}
+
+/* label */
+.label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+/* password input */
+.password-box {
+  position: relative;
+}
+
+.password-box input {
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  border: 1px solid #777;
+  border-radius: 4px;
+  color: #fff;
+  padding: 0 42px 0 12px;
+  font-size: 15px;
+}
+
+.password-box i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #ccc;
+}
+
+.password-box i:hover {
+  color: #1ed760;
+}
+
+/* hint text */
+.hint {
+  margin: 16px 0 12px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* rules */
+.rules {
+  margin-bottom: 24px;
+}
+
+.rules div {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.rules input {
+  accent-color: #1ed760;
+}
+
+/* next button (LINK STYLE) */
+#btm {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  background: #1ed760;
+  color: #000;
+  font-weight: bold;
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+#btm:hover {
+  background: #1fdf64;
+}
+
+/* footer */
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 11px;
+  color: #a7a7a7;
+}
+
+.footer p {
+  line-height: 1.6;
+}
+
+.footer a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.footer a:hover {
+  color: #1ed760;
+}
+
+/* responsive */
+@media (max-width: 480px) {
+  .container {
+    padding-top: 50px;
+  }
+}

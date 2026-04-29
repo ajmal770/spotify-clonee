@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TITLE (text only) -->
+    <title> Spotify </title>
+    <!-- FAVICON (logo in browser tab) -->
+    <link
+      rel="icon"
+      href="https://static.vecteezy.com/system/resources/previews/023/986/728/non_2x/spotify-logo-spotify-logo-transparent-spotify-icon-transparent-free-free-png.png"
+      type="image/png"
+    />
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'loginpage.css' %}" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="wrapper">
+      <div class="login-box">
+
+        <!-- LOGO (correct place for image) -->
+        <img
+          class="logo"
+          src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png"
+          alt="Spotify Logo"
+        />
+
+        <h1>Welcome back</h1>
+
+        <!-- FORM -->
+        <form method="POST">
+          {% csrf_token %}
+
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+          />
+
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+          />
+
+          <button type="submit" class="btn primary">
+            Continue
+          </button>
+        </form>
+
+        <!-- ERROR MESSAGE -->
+        {% if error %}
+          <p id="errors">{{ error }}</p>
+        {% endif %}
+
+        <div class="or">or</div>
+
+        <button class="btn outline">
+          <i class="fa-solid fa-mobile-screen"></i>
+          Continue with phone number
+        </button>
+
+        <button class="btn outline">
+          <i class="fa-brands fa-google"></i>
+          Continue with Google
+        </button>
+
+        <button class="btn outline">
+          <i class="fa-brands fa-facebook"></i>
+          Continue with Facebook
+        </button>
+
+        <button class="btn outline">
+          <i class="fa-brands fa-apple"></i>
+          Continue with Apple
+        </button>
+
+        <p class="signup">
+          Don’t have an account?<br /><br />
+          <a href="{% url 'signup' %}">Sign up</a>
+        </p>
+
+        <div class="footer">
+          <p>
+            This site is protected by reCAPTCHA and the Google
+            <a href="#">Privacy Policy</a> and
+            <a href="#">Terms of Service</a> apply.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </body>
+</html>

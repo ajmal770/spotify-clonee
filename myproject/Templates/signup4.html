@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title> Spotify </title>
+  <link
+      rel="icon"
+      href="https://static.vecteezy.com/system/resources/previews/023/986/728/non_2x/spotify-logo-spotify-logo-transparent-spotify-icon-transparent-free-free-png.png"
+      type="image/png"
+    />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'sing4.css' %}" />
+  <script src="{% static 'javaScriptsfile/sing4.js' %}" defer></script>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body>
+  <div class="signup-container">
+
+    <!-- Logo -->
+    <img
+      class="app-logo"
+      src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_White.png"
+      alt="Spotify"
+    />
+
+    <!-- Progress -->
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header-section">
+      <i class="fa-solid fa-angle-left back-icon"></i>
+      <div>
+        <small class="step-text">Step 3 of 3</small>
+        <h3 class="title-text">Terms & Conditions</h3>
+      </div>
+    </div>
+
+    <!-- FORM START -->
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="contents">
+
+        <div class="marketing-box">
+          <label class="marketing-item">
+            <input type="checkbox" name="marketing_opt_out" value="yes" />
+            <span>
+              I would prefer not to receive marketing messages from Spotify
+            </span>
+          </label>
+        </div>
+
+        <div class="marketing-box">
+          <label class="marketing-item">
+            <input type="checkbox" name="marketing_share" value="yes" />
+            <span>
+              Share my registration data with Spotify's content providers for marketing purposes.
+            </span>
+          </label>
+        </div>
+
+        <div class="last-cont">
+          <p class="title">Spotify is a personalised service.</p>
+
+          <p class="last-text">
+            By clicking on sign up, you agree to Spotify's
+            <a href="#">Terms and Conditions of Use</a>.
+          </p>
+
+          <p class="last-text">
+            You confirm that you have read our
+            <a href="#">Privacy Policy</a>.
+          </p>
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit" class="next-btn">Sign Up</button>
+
+      </div>
+    </form>
+    <!-- FORM END -->
+
+    <!-- Footer -->
+    <div class="page-footer">
+      <p>
+        This site is protected by reCAPTCHA and the Google
+        <a href="#">Privacy Policy</a> and
+        <a href="#">Terms of Service</a> apply.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
